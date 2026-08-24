@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  >
+
+  <title>Barcode Price Checker</title>
+
+
+  <!-- Barcode scanner -->
+
+  <script src="https://unpkg.com/@zxing/browser@latest"></script>
+
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+
+    body {
+
+      margin: 0;
+
+      padding: 15px;
+
+      background: #f4f6f8;
+
+      font-family:
+        Arial,
+        sans-serif;
+
+    }
+
+
+    .container {
+
+      max-width: 600px;
+
+      margin: auto;
+
+    }
+
+
+    h1 {
+
+      text-align: center;
+
+      font-size: 25px;
+
+      margin: 10px 0 20px;
+
+    }
+
+
+    .search-card {
+
+      background: white;
+
+      padding: 15px;
+
+      border-radius: 12px;
+
+      box-shadow:
+        0 2px 8px
+        rgba(0,0,0,0.08);
+
+    }
+
+
+    #searchInput {
+
+      width: 100%;
+
+      padding: 15px;
+
+      font-size: 18px;
+
+      border:
+        1px solid #ccc;
+
+      border-radius: 8px;
+
+      outline: none;
+
+    }
+
+
+    #searchInput:focus {
+
+      border-color: #1976d2;
+
+    }
+
+
+    .buttons {
+
+      display: flex;
+
+      gap: 10px;
+
+      margin-top: 10px;
+
+    }
+
+
+    button {
+
+      border: none;
+
+      border-radius: 8px;
+
+      padding: 14px;
+
+      font-size: 16px;
+
+      color: white;
+
+      cursor: pointer;
+
+    }
+
+
+    #scanButton {
+
+      flex: 1;
+
+      background: #1976d2;
+
+    }
+
+
+    #searchButton {
+
+      flex: 1;
+
+      background: #444;
+
+    }
+
+
+    #stopButton {
+
+      width: 100%;
+
+      margin-top: 10px;
+
+      background: #d32f2f;
+
+      display: none;
+
+    }
+
+
+    #scanner {
+
+      display: none;
+
+      margin-top: 15px;
+
+      background: black;
+
+      border-radius: 12px;
+
+      overflow: hidden;
+
+    }
+
+
+    #video {
+
+      width: 100%;
+
+      display: block;
+
+    }
+
+
+    .scan-message {
+
+      color: white;
+
+      text-align: center;
+
+      padding: 12px;
+
+    }
+
+
+    #results {
+
+      margin-top: 20px;
+
+    }
+
+
+    .result-count {
+
+      color: #666;
+
+      margin-bottom: 10px;
+
+    }
+
+
+    .item {
+
+      background: white;
+
+      padding: 18px;
+
+      margin-bottom: 10px;
+
+      border-radius: 10px;
+
+      box-shadow:
+        0 2px 6px
+        rgba(0,0,0,0.08);
+
+    }
+
+
+    .item-name {
+
+      font-size: 21px;
+
+      font-weight: bold;
+
+    }
+
+
+    .price {
+
+      font-size: 28px;
+
+      font-weight: bold;
+
+      margin-top: 8px;
+
+    }
+
+
+    .barcode {
+
+      color: #777;
+
+      font-size: 13px;
+
+      margin-top: 8px;
+
+    }
+
+
+    .not-found {
+
+      background: white;
+
+      color: #d32f2f;
+
+      padding: 20px;
+
+      border-radius: 10px;
+
+      text-align: center;
+
+    }
+
+
+    .loading {
+
+      background: white;
+
+      padding: 20px;
+
+      border-radius: 10px;
+
+      text-align: center;
+
+      color: #666;
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+  <h1>
+    Barcode Price Checker
+  </h1>
+
+
+  <div class="search-card">
+
+
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Search item..."
+      autocomplete="off"
+    >
+
+
+    <div class="buttons">
+
+
+      <button
+        id="scanButton"
+        onclick="startScanner()"
+      >
+
+        📷 Scan Barcode
+
+      </button>
+
+
+      <button
+        id="searchButton"
+        onclick="performSearch()"
+      >
+
+        🔍 Search
+
+      </button>
+
+
+    </div>
+
+
+    <button
+      id="stopButton"
+      onclick="stopScanner()"
+    >
+
+      ✕ Stop Camera
+
+    </button>
+
+
+  </div>
+
+
+  <!-- CAMERA -->
+
+  <div id="scanner">
+
+    <video
+      id="video"
+      autoplay
+      muted
+      playsinline
+    ></video>
+
+
+    <div class="scan-message">
+
+      Point the camera at a barcode
+
+    </div>
+
+  </div>
+
+
+  <!-- RESULTS -->
+
+  <div id="results"></div>
+
+
+</div>
+
+
+<script>
+
+
+/* ==========================================
+   CONFIGURATION
+========================================== */
+
+
+const API_URL =
+  'https://script.google.com/macros/s/XXXXXXXX/exec';
+
+
+/*
+ * IMPORTANT:
+ *
+ * Replace XXXXXXXX with your
+ * actual Apps Script deployment ID.
+ */
+
+
+/* ==========================================
+   VARIABLES
+========================================== */
+
+
+let codeReader = null;
+
+let scannerControls = null;
+
+let cameraStream = null;
+
+let scanning = false;
+
+
+/* ==========================================
+   MANUAL SEARCH
+========================================== */
+
+
+function performSearch() {
+
+
+  const searchTerm =
+    document
+      .getElementById('searchInput')
+      .value
+      .trim();
+
+
+  if (!searchTerm) {
+
+    document
+      .getElementById('results')
+      .innerHTML = '';
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  callApi(searchTerm);
+
+}
+
+
+/* ==========================================
+   ENTER KEY
+========================================== */
+
+
+document
+  .getElementById('searchInput')
+  .addEventListener(
+    'keydown',
+    function(event) {
+
+      if (event.key === 'Enter') {
+
+        performSearch();
+
+      }
+
+    }
+  );
+
+
+/* ==========================================
+   API CALL
+========================================== */
+
+
+function callApi(searchTerm) {
+
+
+  /*
+   * JSONP callback name.
+   */
+
+  const callbackName =
+    'barcodeCallback_' +
+    Date.now();
+
+
+  window[callbackName] =
+    function(response) {
+
+
+      delete window[callbackName];
+
+
+      if (
+        response &&
+        response.success
+      ) {
+
+        displayResults(
+          response.results
+        );
+
+      } else {
+
+        showError(
+          'Search failed.'
+        );
+
+      }
+
+    };
+
+
+  const script =
+    document.createElement('script');
+
+
+  script.src =
+    API_URL +
+    '?search=' +
+    encodeURIComponent(searchTerm) +
+    '&callback=' +
+    callbackName;
+
+
+  script.onerror =
+    function() {
+
+      delete window[callbackName];
+
+      showError(
+        'Unable to connect to server.'
+      );
+
+    };
+
+
+  document
+    .body
+    .appendChild(script);
+
+}
+
+
+/* ==========================================
+   CAMERA
+========================================== */
+
+
+async function startScanner() {
+
+
+  if (scanning) {
+    return;
+  }
+
+
+  try {
+
+
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+
+      throw new Error(
+        'Camera is not supported by this browser.'
+      );
+
+    }
+
+
+    /*
+     * Request rear camera.
+     */
+
+    cameraStream =
+      await navigator
+        .mediaDevices
+        .getUserMedia({
+
+          video: {
+
+            facingMode: {
+              ideal: 'environment'
+            }
+
+          },
+
+          audio: false
+
+        });
+
+
+    const video =
+      document.getElementById('video');
+
+
+    video.srcObject =
+      cameraStream;
+
+
+    await video.play();
+
+
+    document
+      .getElementById('scanner')
+      .style.display = 'block';
+
+
+    document
+      .getElementById('stopButton')
+      .style.display = 'block';
+
+
+    scanning = true;
+
+
+    /*
+     * Start barcode reader.
+     */
+
+    codeReader =
+      new ZXingBrowser
+        .BrowserMultiFormatReader();
+
+
+    scannerControls =
+      await codeReader
+        .decodeFromVideoElement(
+          video,
+          function(result, error) {
+
+
+            if (result) {
+
+
+              const barcode =
+                result.getText();
+
+
+              console.log(
+                'Barcode:',
+                barcode
+              );
+
+
+              /*
+               * Put barcode in search field.
+               */
+
+              document
+                .getElementById(
+                  'searchInput'
+                )
+                .value = barcode;
+
+
+              /*
+               * Stop camera.
+               */
+
+              stopScanner();
+
+
+              /*
+               * Search barcode.
+               */
+
+              performSearch();
+
+            }
+
+          }
+        );
+
+
+  } catch (error) {
+
+
+    console.error(
+      'Camera error:',
+      error
+    );
+
+
+    stopScanner();
+
+
+    showError(
+      'Unable to access camera: ' +
+      error.message
+    );
+
+  }
+
+}
+
+
+/* ==========================================
+   STOP CAMERA
+========================================== */
+
+
+function stopScanner() {
+
+
+  try {
+
+    if (scannerControls) {
+
+      scannerControls.stop();
+
+      scannerControls = null;
+
+    }
+
+  } catch (e) {
+
+    console.error(e);
+
+  }
+
+
+  if (cameraStream) {
+
+    cameraStream
+      .getTracks()
+      .forEach(
+        track => track.stop()
+      );
+
+    cameraStream = null;
+
+  }
+
+
+  const video =
+    document.getElementById('video');
+
+
+  video.srcObject = null;
+
+
+  document
+    .getElementById('scanner')
+    .style.display = 'none';
+
+
+  document
+    .getElementById('stopButton')
+    .style.display = 'none';
+
+
+  scanning = false;
+
+}
+
+
+/* ==========================================
+   RESULTS
+========================================== */
+
+
+function displayResults(results) {
+
+
+  const container =
+    document
+      .getElementById('results');
+
+
+  container.innerHTML = '';
+
+
+  if (
+    !results ||
+    results.length === 0
+  ) {
+
+    container.innerHTML = `
+
+      <div class="not-found">
+
+        ❌ No item found.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  container.innerHTML = `
+
+    <div class="result-count">
+
+      ${results.length}
+      item(s) found
+
+    </div>
+
+  `;
+
+
+  results.forEach(
+    function(item) {
+
+
+      const price =
+        Number(item.price);
+
+
+      let priceText;
+
+
+      if (
+        Number.isNaN(price)
+      ) {
+
+        priceText =
+          'Price unavailable';
+
+      } else {
+
+        priceText =
+          price.toLocaleString(
+            'en-PH',
+            {
+              style: 'currency',
+              currency: 'PHP'
+            }
+          );
+
+      }
+
+
+      container.innerHTML += `
+
+        <div class="item">
+
+          <div class="item-name">
+
+            ${escapeHtml(
+              item.itemName
+            )}
+
+          </div>
+
+
+          <div class="price">
+
+            ${priceText}
+
+          </div>
+
+
+          <div class="barcode">
+
+            Barcode:
+            ${escapeHtml(
+              item.barcode
+            )}
+
+          </div>
+
+        </div>
+
+      `;
+
+    }
+  );
+
+}
+
+
+/* ==========================================
+   LOADING
+========================================== */
+
+
+function showLoading() {
+
+  document
+    .getElementById('results')
+    .innerHTML = `
+
+      <div class="loading">
+
+        Searching...
+
+      </div>
+
+    `;
+
+}
+
+
+/* ==========================================
+   ERROR
+========================================== */
+
+
+function showError(message) {
+
+  document
+    .getElementById('results')
+    .innerHTML = `
+
+      <div class="not-found">
+
+        ❌ ${escapeHtml(message)}
+
+      </div>
+
+    `;
+
+}
+
+
+/* ==========================================
+   SECURITY
+========================================== */
+
+
+function escapeHtml(value) {
+
+  return String(value)
+
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+
+    .replace(
+      /</g,
+      '&lt;'
+    )
+
+    .replace(
+      />/g,
+      '&gt;'
+    )
+
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+
+    .replace(
+      /'/g,
+      '&#039;'
+    );
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
