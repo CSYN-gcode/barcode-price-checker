@@ -1,0 +1,2614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  >
+
+  <title>Barcode Price Checker</title>
+
+
+  <!--
+    ZXing barcode scanner library
+  -->
+
+  <script src="https://unpkg.com/@zxing/browser@latest"></script>
+
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+
+    body {
+
+      margin: 0;
+
+      padding: 0;
+
+      background: #f4f6f8;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      color: #222;
+
+    }
+
+
+    /* ======================================
+       APP
+    ====================================== */
+
+    .app {
+
+      max-width: 700px;
+
+      margin: auto;
+
+      min-height: 100vh;
+
+    }
+
+
+    /* ======================================
+       HEADER
+    ====================================== */
+
+    .header {
+
+      background: #1976d2;
+
+      color: white;
+
+      padding: 16px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      position: sticky;
+
+      top: 0;
+
+      z-index: 100;
+
+    }
+
+
+    .header-title {
+
+      font-size: 20px;
+
+      font-weight: bold;
+
+    }
+
+
+    .header-button {
+
+      background: transparent;
+
+      border: none;
+
+      color: white;
+
+      font-size: 22px;
+
+      cursor: pointer;
+
+      padding: 5px;
+
+    }
+
+
+    /* ======================================
+       PAGE
+    ====================================== */
+
+    .page {
+
+      padding: 15px;
+
+    }
+
+
+    .hidden {
+
+      display: none !important;
+
+    }
+
+
+    /* ======================================
+       SEARCH CARD
+    ====================================== */
+
+    .search-card {
+
+      background: white;
+
+      padding: 15px;
+
+      border-radius: 12px;
+
+      box-shadow:
+        0 2px 8px
+        rgba(0,0,0,0.08);
+
+    }
+
+
+    #searchInput {
+
+      width: 100%;
+
+      padding: 15px;
+
+      border:
+        1px solid #ccc;
+
+      border-radius: 8px;
+
+      font-size: 18px;
+
+      outline: none;
+
+    }
+
+
+    #searchInput:focus {
+
+      border-color: #1976d2;
+
+    }
+
+
+    .button-row {
+
+      display: flex;
+
+      gap: 10px;
+
+      margin-top: 10px;
+
+    }
+
+
+    button {
+
+      border: none;
+
+      border-radius: 8px;
+
+      padding: 13px;
+
+      font-size: 16px;
+
+      cursor: pointer;
+
+    }
+
+
+    .btn-primary {
+
+      background: #1976d2;
+
+      color: white;
+
+    }
+
+
+    .btn-secondary {
+
+      background: #555;
+
+      color: white;
+
+    }
+
+
+    .btn-danger {
+
+      background: #d32f2f;
+
+      color: white;
+
+    }
+
+
+    .btn-success {
+
+      background: #2e7d32;
+
+      color: white;
+
+    }
+
+
+    .btn-light {
+
+      background: #e9ecef;
+
+      color: #222;
+
+    }
+
+
+    /* ======================================
+       CAMERA
+    ====================================== */
+
+    #scanner {
+
+      margin-top: 15px;
+
+      background: #000;
+
+      border-radius: 12px;
+
+      overflow: hidden;
+
+    }
+
+
+    #video {
+
+      width: 100%;
+
+      display: block;
+
+    }
+
+
+    .scan-message {
+
+      background: #000;
+
+      color: white;
+
+      text-align: center;
+
+      padding: 12px;
+
+    }
+
+
+    #stopButton {
+
+      width: 100%;
+
+      margin-top: 10px;
+
+    }
+
+
+    /* ======================================
+       RESULTS
+    ====================================== */
+
+    #results {
+
+      margin-top: 20px;
+
+    }
+
+
+    .result-count {
+
+      color: #666;
+
+      font-size: 14px;
+
+      margin-bottom: 10px;
+
+    }
+
+
+    .item-card {
+
+      background: white;
+
+      padding: 18px;
+
+      margin-bottom: 10px;
+
+      border-radius: 10px;
+
+      box-shadow:
+        0 2px 6px
+        rgba(0,0,0,0.08);
+
+    }
+
+
+    .item-name {
+
+      font-size: 21px;
+
+      font-weight: bold;
+
+    }
+
+
+    .item-price {
+
+      font-size: 28px;
+
+      font-weight: bold;
+
+      margin-top: 8px;
+
+    }
+
+
+    .item-barcode {
+
+      color: #777;
+
+      font-size: 13px;
+
+      margin-top: 8px;
+
+    }
+
+
+    .not-found {
+
+      background: white;
+
+      color: #d32f2f;
+
+      text-align: center;
+
+      padding: 20px;
+
+      border-radius: 10px;
+
+    }
+
+
+    .loading {
+
+      background: white;
+
+      text-align: center;
+
+      padding: 20px;
+
+      border-radius: 10px;
+
+      color: #666;
+
+    }
+
+
+    /* ======================================
+       ADMIN
+    ====================================== */
+
+    .admin-menu {
+
+      display: grid;
+
+      gap: 12px;
+
+    }
+
+
+    .admin-menu button {
+
+      width: 100%;
+
+      padding: 17px;
+
+      font-size: 17px;
+
+    }
+
+
+    .admin-title {
+
+      font-size: 24px;
+
+      font-weight: bold;
+
+      margin-bottom: 15px;
+
+    }
+
+
+    /* ======================================
+       FORM
+    ====================================== */
+
+    .form-card {
+
+      background: white;
+
+      padding: 18px;
+
+      border-radius: 10px;
+
+      box-shadow:
+        0 2px 6px
+        rgba(0,0,0,0.08);
+
+    }
+
+
+    .form-group {
+
+      margin-bottom: 15px;
+
+    }
+
+
+    .form-group label {
+
+      display: block;
+
+      font-weight: bold;
+
+      margin-bottom: 6px;
+
+    }
+
+
+    .form-group input {
+
+      width: 100%;
+
+      padding: 13px;
+
+      border:
+        1px solid #ccc;
+
+      border-radius: 7px;
+
+      font-size: 17px;
+
+    }
+
+
+    .form-actions {
+
+      display: flex;
+
+      gap: 10px;
+
+      margin-top: 15px;
+
+    }
+
+
+    .form-actions button {
+
+      flex: 1;
+
+    }
+
+
+    /* ======================================
+       ADMIN ITEM LIST
+    ====================================== */
+
+    .admin-item {
+
+      background: white;
+
+      padding: 15px;
+
+      border-radius: 10px;
+
+      margin-bottom: 10px;
+
+      box-shadow:
+        0 2px 5px
+        rgba(0,0,0,0.08);
+
+    }
+
+
+    .admin-item-name {
+
+      font-size: 18px;
+
+      font-weight: bold;
+
+    }
+
+
+    .admin-item-price {
+
+      font-size: 20px;
+
+      font-weight: bold;
+
+      margin-top: 5px;
+
+    }
+
+
+    .admin-item-barcode {
+
+      font-size: 12px;
+
+      color: #777;
+
+      margin-top: 5px;
+
+    }
+
+
+    .admin-actions {
+
+      display: flex;
+
+      gap: 8px;
+
+      margin-top: 12px;
+
+    }
+
+
+    .admin-actions button {
+
+      flex: 1;
+
+    }
+
+
+    /* ======================================
+       TOAST
+    ====================================== */
+
+    #toast {
+
+      position: fixed;
+
+      left: 15px;
+
+      right: 15px;
+
+      bottom: 20px;
+
+      max-width: 600px;
+
+      margin: auto;
+
+      background: #222;
+
+      color: white;
+
+      padding: 14px;
+
+      border-radius: 8px;
+
+      text-align: center;
+
+      display: none;
+
+      z-index: 999;
+
+    }
+
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+<div class="app">
+
+
+  <!-- ====================================
+       HEADER
+  ===================================== -->
+
+  <div class="header">
+
+
+    <div class="header-title">
+
+      Barcode Price Checker
+
+    </div>
+
+
+    <button
+      class="header-button"
+      onclick="openAdmin()"
+      title="Admin"
+    >
+
+      ⚙️
+
+    </button>
+
+
+  </div>
+
+
+  <!-- ====================================
+       CHECKER PAGE
+  ===================================== -->
+
+  <div
+    id="checkerPage"
+    class="page"
+  >
+
+
+    <div class="search-card">
+
+
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search item or barcode..."
+        autocomplete="off"
+      >
+
+
+      <div class="button-row">
+
+
+        <button
+          class="btn-primary"
+          onclick="startScanner()"
+        >
+
+          📷 Scan Barcode
+
+        </button>
+
+
+        <button
+          class="btn-secondary"
+          onclick="performSearch()"
+        >
+
+          🔍 Search
+
+        </button>
+
+
+      </div>
+
+
+      <button
+        id="stopButton"
+        class="btn-danger hidden"
+        onclick="stopScanner()"
+      >
+
+        ✕ Stop Camera
+
+      </button>
+
+
+    </div>
+
+
+    <!-- CAMERA -->
+
+    <div
+      id="scanner"
+      class="hidden"
+    >
+
+
+      <video
+        id="video"
+        autoplay
+        muted
+        playsinline
+      ></video>
+
+
+      <div class="scan-message">
+
+        Point the camera at the barcode
+
+      </div>
+
+
+    </div>
+
+
+    <!-- RESULTS -->
+
+    <div id="results"></div>
+
+
+  </div>
+
+
+  <!-- ====================================
+       ADMIN HOME
+  ===================================== -->
+
+  <div
+    id="adminPage"
+    class="page hidden"
+  >
+
+
+    <div class="admin-title">
+
+      Admin
+
+    </div>
+
+
+    <div class="admin-menu">
+
+
+      <button
+        class="btn-success"
+        onclick="showAddPage()"
+      >
+
+        ➕ Add New Item
+
+      </button>
+
+
+      <button
+        class="btn-primary"
+        onclick="showManagePage()"
+      >
+
+        📋 Manage Items
+
+      </button>
+
+
+      <button
+        class="btn-light"
+        onclick="backToChecker()"
+      >
+
+        ← Back to Price Checker
+
+      </button>
+
+
+    </div>
+
+
+  </div>
+
+
+  <!-- ====================================
+       ADD ITEM
+  ===================================== -->
+
+  <div
+    id="addPage"
+    class="page hidden"
+  >
+
+
+    <div class="admin-title">
+
+      Add New Item
+
+    </div>
+
+
+    <div class="form-card">
+
+
+      <div class="form-group">
+
+        <label>
+          Barcode
+        </label>
+
+        <input
+          type="text"
+          id="addBarcode"
+          placeholder="Enter barcode"
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Item Name
+        </label>
+
+        <input
+          type="text"
+          id="addItemName"
+          placeholder="Example: Coke 1.5L"
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Price
+        </label>
+
+        <input
+          type="number"
+          id="addPrice"
+          placeholder="Example: 75"
+          step="0.01"
+          min="0"
+        >
+
+      </div>
+
+
+      <div class="form-actions">
+
+
+        <button
+          class="btn-success"
+          onclick="addItem()"
+        >
+
+          ➕ Add Item
+
+        </button>
+
+
+        <button
+          class="btn-light"
+          onclick="openAdmin()"
+        >
+
+          Cancel
+
+        </button>
+
+
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+  <!-- ====================================
+       MANAGE ITEMS
+  ===================================== -->
+
+  <div
+    id="managePage"
+    class="page hidden"
+  >
+
+
+    <div class="admin-title">
+
+      Manage Items
+
+    </div>
+
+
+    <div class="form-card">
+
+
+      <input
+        type="text"
+        id="adminSearch"
+        placeholder="Search items..."
+        oninput="filterAdminItems()"
+      >
+
+
+    </div>
+
+
+    <div
+      id="adminItems"
+      style="margin-top:15px;"
+    ></div>
+
+
+    <button
+      class="btn-light"
+      style="width:100%; margin-top:10px;"
+      onclick="openAdmin()"
+    >
+
+      ← Back to Admin
+
+    </button>
+
+
+  </div>
+
+
+  <!-- ====================================
+       EDIT ITEM
+  ===================================== -->
+
+  <div
+    id="editPage"
+    class="page hidden"
+  >
+
+
+    <div class="admin-title">
+
+      Edit Item
+
+    </div>
+
+
+    <div class="form-card">
+
+
+      <input
+        type="hidden"
+        id="editOldBarcode"
+      >
+
+
+      <div class="form-group">
+
+        <label>
+          Barcode
+        </label>
+
+        <input
+          type="text"
+          id="editBarcode"
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Item Name
+        </label>
+
+        <input
+          type="text"
+          id="editItemName"
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          Price
+        </label>
+
+        <input
+          type="number"
+          id="editPrice"
+          step="0.01"
+          min="0"
+        >
+
+      </div>
+
+
+      <div class="form-actions">
+
+
+        <button
+          class="btn-primary"
+          onclick="updateItem()"
+        >
+
+          💾 Save Changes
+
+        </button>
+
+
+        <button
+          class="btn-light"
+          onclick="showManagePage()"
+        >
+
+          Cancel
+
+        </button>
+
+
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+</div>
+
+
+<!-- TOAST -->
+
+<div id="toast"></div>
+
+
+<script>
+
+
+/* ==========================================
+   CONFIGURATION
+========================================== */
+
+
+/*
+ * IMPORTANT:
+ *
+ * Replace this with your actual
+ * Apps Script /exec URL.
+ */
+
+const API_URL =
+  'YOUR_APPS_SCRIPT_URL';
+
+
+/*
+ * Example:
+ *
+ * const API_URL =
+ * 'https://script.google.com/macros/s/AKfycbxxxxxxxx/exec';
+ */
+
+
+/* ==========================================
+   GLOBAL VARIABLES
+========================================== */
+
+let codeReader = null;
+
+let scannerControls = null;
+
+let cameraStream = null;
+
+let scanning = false;
+
+let adminItems = [];
+
+
+/* ==========================================
+   PAGE NAVIGATION
+========================================== */
+
+
+function hideAllPages() {
+
+  document
+    .getElementById('checkerPage')
+    .classList.add('hidden');
+
+  document
+    .getElementById('adminPage')
+    .classList.add('hidden');
+
+  document
+    .getElementById('addPage')
+    .classList.add('hidden');
+
+  document
+    .getElementById('managePage')
+    .classList.add('hidden');
+
+  document
+    .getElementById('editPage')
+    .classList.add('hidden');
+
+}
+
+
+function openAdmin() {
+
+  stopScanner();
+
+  hideAllPages();
+
+  document
+    .getElementById('adminPage')
+    .classList.remove('hidden');
+
+}
+
+
+function backToChecker() {
+
+  hideAllPages();
+
+  document
+    .getElementById('checkerPage')
+    .classList.remove('hidden');
+
+}
+
+
+function showAddPage() {
+
+  hideAllPages();
+
+  clearAddForm();
+
+  document
+    .getElementById('addPage')
+    .classList.remove('hidden');
+
+}
+
+
+function showManagePage() {
+
+  hideAllPages();
+
+  document
+    .getElementById('managePage')
+    .classList.remove('hidden');
+
+  loadAdminItems();
+
+}
+
+
+function showEditPage(item) {
+
+  hideAllPages();
+
+
+  document
+    .getElementById('editPage')
+    .classList.remove('hidden');
+
+
+  document
+    .getElementById('editOldBarcode')
+    .value =
+    item.barcode;
+
+
+  document
+    .getElementById('editBarcode')
+    .value =
+    item.barcode;
+
+
+  document
+    .getElementById('editItemName')
+    .value =
+    item.itemName;
+
+
+  document
+    .getElementById('editPrice')
+    .value =
+    item.price;
+
+}
+
+
+/* ==========================================
+   SEARCH
+========================================== */
+
+
+function performSearch() {
+
+  const searchTerm =
+    document
+      .getElementById('searchInput')
+      .value
+      .trim();
+
+
+  if (!searchTerm) {
+
+    document
+      .getElementById('results')
+      .innerHTML = '';
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  callApi(
+    'search',
+    {
+      search: searchTerm
+    },
+    function(response) {
+
+      if (
+        response.success
+      ) {
+
+        displayResults(
+          response.results
+        );
+
+      } else {
+
+        showError(
+          response.message
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+/* ==========================================
+   ENTER SEARCH
+========================================== */
+
+
+document
+  .getElementById('searchInput')
+  .addEventListener(
+    'keydown',
+    function(event) {
+
+      if (
+        event.key === 'Enter'
+      ) {
+
+        performSearch();
+
+      }
+
+    }
+  );
+
+
+/* ==========================================
+   API JSONP
+========================================== */
+
+
+function callApi(
+  action,
+  params,
+  callback
+) {
+
+
+  const callbackName =
+    'apiCallback_' +
+    Date.now() +
+    '_' +
+    Math.floor(
+      Math.random() * 10000
+    );
+
+
+  window[callbackName] =
+    function(response) {
+
+
+      delete window[callbackName];
+
+
+      if (
+        script &&
+        script.parentNode
+      ) {
+
+        script.parentNode
+          .removeChild(script);
+
+      }
+
+
+      callback(response);
+
+    };
+
+
+  const query =
+    new URLSearchParams();
+
+
+  query.set(
+    'action',
+    action
+  );
+
+
+  query.set(
+    'callback',
+    callbackName
+  );
+
+
+  Object.keys(params || {})
+    .forEach(function(key) {
+
+      query.set(
+        key,
+        params[key]
+      );
+
+    });
+
+
+  const script =
+    document.createElement('script');
+
+
+  script.src =
+    API_URL +
+    '?' +
+    query.toString();
+
+
+  script.onerror =
+    function() {
+
+
+      delete window[callbackName];
+
+
+      if (
+        script.parentNode
+      ) {
+
+        script.parentNode
+          .removeChild(script);
+
+      }
+
+
+      callback({
+
+        success: false,
+
+        message:
+          'Unable to connect to Apps Script.'
+
+      });
+
+    };
+
+
+  document
+    .body
+    .appendChild(script);
+
+}
+
+
+/* ==========================================
+   CAMERA SCANNER
+========================================== */
+
+
+async function startScanner() {
+
+
+  if (scanning) {
+    return;
+  }
+
+
+  try {
+
+
+    if (
+      !navigator.mediaDevices ||
+      !navigator
+        .mediaDevices
+        .getUserMedia
+    ) {
+
+      throw new Error(
+        'Camera is not supported by this browser.'
+      );
+
+    }
+
+
+    /*
+     * Request rear camera.
+     */
+
+    cameraStream =
+      await navigator
+        .mediaDevices
+        .getUserMedia({
+
+          video: {
+
+            facingMode: {
+              ideal: 'environment'
+            }
+
+          },
+
+          audio: false
+
+        });
+
+
+    const video =
+      document
+        .getElementById(
+          'video'
+        );
+
+
+    video.srcObject =
+      cameraStream;
+
+
+    await video.play();
+
+
+    document
+      .getElementById(
+        'scanner'
+      )
+      .classList
+      .remove('hidden');
+
+
+    document
+      .getElementById(
+        'stopButton'
+      )
+      .classList
+      .remove('hidden');
+
+
+    scanning = true;
+
+
+    /*
+     * ZXing scanner
+     */
+
+    codeReader =
+      new ZXingBrowser
+        .BrowserMultiFormatReader();
+
+
+    scannerControls =
+      await codeReader
+        .decodeFromVideoElement(
+
+          video,
+
+          function(
+            result,
+            error
+          ) {
+
+
+            if (result) {
+
+
+              const barcode =
+                result.getText();
+
+
+              console.log(
+                'Barcode detected:',
+                barcode
+              );
+
+
+              /*
+               * Put barcode
+               * into search field.
+               */
+
+              document
+                .getElementById(
+                  'searchInput'
+                )
+                .value =
+                barcode;
+
+
+              /*
+               * Stop camera.
+               */
+
+              stopScanner();
+
+
+              /*
+               * Search barcode.
+               */
+
+              performSearch();
+
+            }
+
+          }
+
+        );
+
+
+  } catch (error) {
+
+
+    console.error(
+      error
+    );
+
+
+    stopScanner();
+
+
+    showError(
+      'Unable to access camera: ' +
+      error.message
+    );
+
+  }
+
+}
+
+
+/* ==========================================
+   STOP CAMERA
+========================================== */
+
+
+function stopScanner() {
+
+
+  try {
+
+    if (
+      scannerControls
+    ) {
+
+      scannerControls.stop();
+
+      scannerControls = null;
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+
+  if (
+    cameraStream
+  ) {
+
+    cameraStream
+      .getTracks()
+      .forEach(
+        function(track) {
+
+          track.stop();
+
+        }
+      );
+
+
+    cameraStream = null;
+
+  }
+
+
+  const video =
+    document
+      .getElementById(
+        'video'
+      );
+
+
+  video.srcObject =
+    null;
+
+
+  document
+    .getElementById(
+      'scanner'
+    )
+    .classList
+    .add('hidden');
+
+
+  document
+    .getElementById(
+      'stopButton'
+    )
+    .classList
+    .add('hidden');
+
+
+  scanning = false;
+
+}
+
+
+/* ==========================================
+   DISPLAY RESULTS
+========================================== */
+
+
+function displayResults(
+  results
+) {
+
+
+  const container =
+    document
+      .getElementById(
+        'results'
+      );
+
+
+  container.innerHTML =
+    '';
+
+
+  if (
+    !results ||
+    results.length === 0
+  ) {
+
+    container.innerHTML = `
+
+      <div class="not-found">
+
+        ❌ No item found.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  container.innerHTML = `
+
+    <div class="result-count">
+
+      ${results.length}
+      item(s) found
+
+    </div>
+
+  `;
+
+
+  results.forEach(
+    function(item) {
+
+
+      const price =
+        Number(item.price);
+
+
+      let priceText;
+
+
+      if (
+        Number.isNaN(price)
+      ) {
+
+        priceText =
+          'Price unavailable';
+
+      } else {
+
+        priceText =
+          price.toLocaleString(
+            'en-PH',
+            {
+              style: 'currency',
+              currency: 'PHP'
+            }
+          );
+
+      }
+
+
+      container.innerHTML += `
+
+        <div class="item-card">
+
+          <div class="item-name">
+
+            ${escapeHtml(
+              item.itemName
+            )}
+
+          </div>
+
+
+          <div class="item-price">
+
+            ${priceText}
+
+          </div>
+
+
+          <div class="item-barcode">
+
+            Barcode:
+            ${escapeHtml(
+              item.barcode
+            )}
+
+          </div>
+
+        </div>
+
+      `;
+
+    }
+  );
+
+}
+
+
+/* ==========================================
+   ADMIN - LOAD ITEMS
+========================================== */
+
+
+function loadAdminItems() {
+
+
+  document
+    .getElementById(
+      'adminItems'
+    )
+    .innerHTML = `
+
+      <div class="loading">
+
+        Loading items...
+
+      </div>
+
+    `;
+
+
+  callApi(
+    'list',
+    {},
+    function(response) {
+
+
+      if (
+        response.success
+      ) {
+
+        adminItems =
+          response.results || [];
+
+
+        renderAdminItems(
+          adminItems
+        );
+
+      } else {
+
+        showError(
+          response.message
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+/* ==========================================
+   ADMIN - RENDER ITEMS
+========================================== */
+
+
+function renderAdminItems(
+  items
+) {
+
+
+  const container =
+    document
+      .getElementById(
+        'adminItems'
+      );
+
+
+  container.innerHTML =
+    '';
+
+
+  if (
+    !items ||
+    items.length === 0
+  ) {
+
+    container.innerHTML = `
+
+      <div class="not-found">
+
+        No items found.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  items.forEach(
+    function(item) {
+
+
+      const price =
+        Number(item.price);
+
+
+      const priceText =
+        Number.isNaN(price)
+
+          ? 'Price unavailable'
+
+          : price.toLocaleString(
+              'en-PH',
+              {
+                style: 'currency',
+                currency: 'PHP'
+              }
+            );
+
+
+      container.innerHTML += `
+
+        <div class="admin-item">
+
+          <div class="admin-item-name">
+
+            ${escapeHtml(
+              item.itemName
+            )}
+
+          </div>
+
+
+          <div class="admin-item-price">
+
+            ${priceText}
+
+          </div>
+
+
+          <div class="admin-item-barcode">
+
+            Barcode:
+            ${escapeHtml(
+              item.barcode
+            )}
+
+          </div>
+
+
+          <div class="admin-actions">
+
+
+            <button
+              class="btn-primary"
+              onclick="editItemByBarcode(
+                '${escapeJs(
+                  item.barcode
+                )}'
+              )"
+            >
+
+              ✏️ Edit
+
+            </button>
+
+
+            <button
+              class="btn-danger"
+              onclick="deleteItemConfirm(
+                '${escapeJs(
+                  item.barcode
+                )}',
+                '${escapeJs(
+                  item.itemName
+                )}'
+              )"
+            >
+
+              🗑️ Delete
+
+            </button>
+
+
+          </div>
+
+        </div>
+
+      `;
+
+    }
+  );
+
+}
+
+
+/* ==========================================
+   ADMIN SEARCH
+========================================== */
+
+
+function filterAdminItems() {
+
+
+  const term =
+    document
+      .getElementById(
+        'adminSearch'
+      )
+      .value
+      .trim()
+      .toLowerCase();
+
+
+  if (!term) {
+
+    renderAdminItems(
+      adminItems
+    );
+
+    return;
+
+  }
+
+
+  const filtered =
+    adminItems.filter(
+      function(item) {
+
+        return (
+
+          String(
+            item.barcode
+          )
+          .toLowerCase()
+          .includes(term)
+
+          ||
+
+          String(
+            item.itemName
+          )
+          .toLowerCase()
+          .includes(term)
+
+        );
+
+      }
+    );
+
+
+  renderAdminItems(
+    filtered
+  );
+
+}
+
+
+/* ==========================================
+   ADMIN - ADD ITEM
+========================================== */
+
+
+function addItem() {
+
+
+  const barcode =
+    document
+      .getElementById(
+        'addBarcode'
+      )
+      .value
+      .trim();
+
+
+  const itemName =
+    document
+      .getElementById(
+        'addItemName'
+      )
+      .value
+      .trim();
+
+
+  const price =
+    document
+      .getElementById(
+        'addPrice'
+      )
+      .value
+      .trim();
+
+
+  if (!barcode) {
+
+    showToast(
+      'Barcode is required.'
+    );
+
+    return;
+
+  }
+
+
+  if (!itemName) {
+
+    showToast(
+      'Item name is required.'
+    );
+
+    return;
+
+  }
+
+
+  if (
+    price === ''
+  ) {
+
+    showToast(
+      'Price is required.'
+    );
+
+    return;
+
+  }
+
+
+  callApi(
+
+    'add',
+
+    {
+      barcode: barcode,
+
+      itemName: itemName,
+
+      price: price
+
+    },
+
+    function(response) {
+
+
+      if (
+        response.success
+      ) {
+
+
+        showToast(
+          'Item added successfully.'
+        );
+
+
+        clearAddForm();
+
+
+        /*
+         * Go to Manage Items
+         * after adding.
+         */
+
+        showManagePage();
+
+
+      } else {
+
+
+        showToast(
+          response.message
+        );
+
+      }
+
+    }
+
+  );
+
+}
+
+
+/* ==========================================
+   CLEAR ADD FORM
+========================================== */
+
+
+function clearAddForm() {
+
+  document
+    .getElementById(
+      'addBarcode'
+    )
+    .value = '';
+
+
+  document
+    .getElementById(
+      'addItemName'
+    )
+    .value = '';
+
+
+  document
+    .getElementById(
+      'addPrice'
+    )
+    .value = '';
+
+}
+
+
+/* ==========================================
+   ADMIN - EDIT
+========================================== */
+
+
+function editItemByBarcode(
+  barcode
+) {
+
+
+  const item =
+    adminItems.find(
+      function(item) {
+
+        return (
+          String(item.barcode) ===
+          String(barcode)
+        );
+
+      }
+    );
+
+
+  if (!item) {
+
+    showToast(
+      'Item not found.'
+    );
+
+    return;
+
+  }
+
+
+  showEditPage(
+    item
+  );
+
+}
+
+
+/* ==========================================
+   ADMIN - UPDATE
+========================================== */
+
+
+function updateItem() {
+
+
+  const oldBarcode =
+    document
+      .getElementById(
+        'editOldBarcode'
+      )
+      .value
+      .trim();
+
+
+  const barcode =
+    document
+      .getElementById(
+        'editBarcode'
+      )
+      .value
+      .trim();
+
+
+  const itemName =
+    document
+      .getElementById(
+        'editItemName'
+      )
+      .value
+      .trim();
+
+
+  const price =
+    document
+      .getElementById(
+        'editPrice'
+      )
+      .value
+      .trim();
+
+
+  if (!barcode) {
+
+    showToast(
+      'Barcode is required.'
+    );
+
+    return;
+
+  }
+
+
+  if (!itemName) {
+
+    showToast(
+      'Item name is required.'
+    );
+
+    return;
+
+  }
+
+
+  if (
+    price === ''
+  ) {
+
+    showToast(
+      'Price is required.'
+    );
+
+    return;
+
+  }
+
+
+  callApi(
+
+    'update',
+
+    {
+
+      oldBarcode:
+        oldBarcode,
+
+      barcode:
+        barcode,
+
+      itemName:
+        itemName,
+
+      price:
+        price
+
+    },
+
+    function(response) {
+
+
+      if (
+        response.success
+      ) {
+
+
+        showToast(
+          'Item updated successfully.'
+        );
+
+
+        showManagePage();
+
+
+      } else {
+
+
+        showToast(
+          response.message
+        );
+
+      }
+
+    }
+
+  );
+
+}
+
+
+/* ==========================================
+   ADMIN - DELETE
+========================================== */
+
+
+function deleteItemConfirm(
+  barcode,
+  itemName
+) {
+
+
+  const confirmed =
+    confirm(
+
+      'Delete this item?\n\n' +
+
+      itemName +
+
+      '\nBarcode: ' +
+
+      barcode
+
+    );
+
+
+  if (!confirmed) {
+
+    return;
+
+  }
+
+
+  callApi(
+
+    'delete',
+
+    {
+      barcode: barcode
+    },
+
+    function(response) {
+
+
+      if (
+        response.success
+      ) {
+
+
+        showToast(
+          'Item deleted successfully.'
+        );
+
+
+        loadAdminItems();
+
+
+      } else {
+
+
+        showToast(
+          response.message
+        );
+
+      }
+
+    }
+
+  );
+
+}
+
+
+/* ==========================================
+   TOAST
+========================================== */
+
+
+function showToast(
+  message
+) {
+
+
+  const toast =
+    document
+      .getElementById(
+        'toast'
+      );
+
+
+  toast.innerText =
+    message;
+
+
+  toast.style.display =
+    'block';
+
+
+  setTimeout(
+    function() {
+
+      toast.style.display =
+        'none';
+
+    },
+    2500
+  );
+
+}
+
+
+/* ==========================================
+   LOADING
+========================================== */
+
+
+function showLoading() {
+
+  document
+    .getElementById(
+      'results'
+    )
+    .innerHTML = `
+
+      <div class="loading">
+
+        Searching...
+
+      </div>
+
+    `;
+
+}
+
+
+/* ==========================================
+   ERROR
+========================================== */
+
+
+function showError(
+  message
+) {
+
+  document
+    .getElementById(
+      'results'
+    )
+    .innerHTML = `
+
+      <div class="not-found">
+
+        ❌
+        ${escapeHtml(message)}
+
+      </div>
+
+    `;
+
+}
+
+
+/* ==========================================
+   HTML ESCAPE
+========================================== */
+
+
+function escapeHtml(
+  value
+) {
+
+  return String(value)
+
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+
+    .replace(
+      /</g,
+      '&lt;'
+    )
+
+    .replace(
+      />/g,
+      '&gt;'
+    )
+
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+
+    .replace(
+      /'/g,
+      '&#039;'
+    );
+
+}
+
+
+/* ==========================================
+   JAVASCRIPT ESCAPE
+========================================== */
+
+
+function escapeJs(
+  value
+) {
+
+  return String(value)
+
+    .replace(
+      /\\/g,
+      '\\\\'
+    )
+
+    .replace(
+      /'/g,
+      "\\'"
+    )
+
+    .replace(
+      /"/g,
+      '\\"'
+    )
+
+    .replace(
+      /\r/g,
+      '\\r'
+    )
+
+    .replace(
+      /\n/g,
+      '\\n'
+    );
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
